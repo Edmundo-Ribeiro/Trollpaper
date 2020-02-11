@@ -157,12 +157,13 @@ if(current_dir != startup_full_path and filename.find('_') == -1 ):
 	subprocess.call(run_cmd)
 
 else:
-	img_path = GetImg(search_queries, None, os.getcwd())
-	os.chdir(startup_full_path)
+	img_path = GetImg(search_queries, None, startup_full_path)
+	print(img_path)
+	# os.chdir()
 	if(img_path):
 		#print('Seting image', end = '\n\n')
 		setImageAsBackground(img_path)
-		sleep(1)
+		sleep(2)
 		os.remove(img_path)
 
 	
